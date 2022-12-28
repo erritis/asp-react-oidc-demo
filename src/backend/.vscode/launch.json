@@ -11,7 +11,7 @@
             "sourceFileMap": {
                 "/src": "${workspaceFolder}"
             },
-            "containerName": "react-auth-backend"
+            "containerName": "asp-react-auth-backend"
         }
     ]
 }

@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   keycloakdb:
-    container_name: react-auth-keycloakdb
+    container_name: asp-react-auth-keycloakdb
     image: postgres:12.9
     volumes:
       - keycloakdb:/var/lib/postgresql/data
@@ -17,10 +17,10 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - react-auth-network
+      - asp-react-auth-network
 
   keycloak:
-    container_name: react-auth-keycloak
+    container_name: asp-react-auth-keycloak
     image: quay.io/keycloak/keycloak:19.0.3
     environment:
       KC_DB: postgres
@@ -49,12 +49,12 @@ services:
     depends_on:
       - keycloakdb
     networks:
-      react-auth-network:
+      asp-react-auth-network:
         ipv4_address: 172.18.0.3
     
   web:
     image: node:14.17.6-alpine
-    container_name: react-auth-web
+    container_name: asp-react-auth-web
     stdin_open: true
     deploy:
       replicas: 1
@@ -69,18 +69,16 @@ services:
       NODE_ENV: development
       PORT: 52434
       REACT_APP_KEYCLOAK_URL: http://172.18.0.3:52433/realms/react-example
-      REACT_APP_KEYCLOAK_REALM: react-example
       REACT_APP_KEYCLOAK_CLIENT_ID: react
-      REACT_APP_KEYCLOAK_REDIRECT_URL: http://localhost:52434/
       REACT_APP_BACKEND_URL: http://localhost:52435
     working_dir: /app
     command: sh -c "yarn install && yarn start"
     networks:
-      - react-auth-network
+      - asp-react-auth-network
 
   backend:
     build: ./src/backend
-    container_name: react-auth-backend
+    container_name: asp-react-auth-backend
     deploy:
       replicas: 1
     environment:
@@ -93,11 +91,11 @@ services:
     ports:
       - "52435:80"
     networks:
-      - react-auth-network
+      - asp-react-auth-network
 
 networks:
-  react-auth-network:
-    name: react-auth-network
+  asp-react-auth-network:
+    name: asp-react-auth-network
     driver: bridge
     ipam:
       config:
