@@ -1,8 +1,10 @@
-import { AuthProviderProps } from "react-oidc-context";
-
+import { OidcConfiguration } from "@axa-fr/react-oidc";
 
 export const oidcConfig = {
-  authority: process.env.REACT_APP_KEYCLOAK_URL,
   client_id: process.env.REACT_APP_KEYCLOAK_CLIENT_ID,
-  redirect_uri: window.location.origin
-} as AuthProviderProps;
+  redirect_uri: window.location.origin + '/#',
+  scope: 'openid profile email offline_access',
+  authority: process.env.REACT_APP_KEYCLOAK_URL,
+  service_worker_relative_url:'/OidcServiceWorker.js',
+  service_worker_only:true,
+} as OidcConfiguration;
