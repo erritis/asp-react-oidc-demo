@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 
-namespace backend;
 public class HasScopeHandler : AuthorizationHandler<HasScopeRequirement>
 {
     protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, HasScopeRequirement requirement)

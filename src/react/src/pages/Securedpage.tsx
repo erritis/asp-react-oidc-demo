@@ -1,33 +1,28 @@
 import React, { useState } from 'react';
 import { useAuth } from 'react-oidc-context';
 
-interface WeatherForecast {
-  date: string;
-  temperatureC: number;
-  temperatureF: number;
-  summary: string;
-}
-
 const Secured = () => {
 
   const auth = useAuth();
-  const [forecasts, setForecasts] = useState<WeatherForecast[]>([]);
+  const [userinfo, setUserinfo] = useState<[string, string][]>([]);
 
   React.useEffect(() => {
       (async () => {
       try {
           const token = auth.user?.access_token;
-          const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/weatherforecast`, {
+          const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/userinfo`, {
           headers: {
               Authorization: `Bearer ${token}`,
           },
           });
-          setForecasts(await response.json());
+          let result: any = await response.json();
+          
+          setUserinfo(Object.entries(result));
       } catch (e) {
           console.error(e);
       }
       })();
-  }, [auth]);
+  }, [auth, auth.user, auth.user?.access_token]);
 
 
 
@@ -39,23 +34,19 @@ const Secured = () => {
 
     <p>This component demonstrates fetching data from the server.</p>
 
-     { forecasts.length ? (
+     { userinfo.length ? (
       <table className='table table-striped' aria-labelledby="tableLabel">
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Temp. (C)</th>
-            <th>Temp. (F)</th>
-            <th>Summary</th>
+            <th>Key:</th>
+            <th>Value</th>
           </tr>
         </thead>
         <tbody>
-          {forecasts.map((forecast) => (
+          {userinfo.map(item => (
             <tr>
-              <td>{ forecast.date }</td>
-              <td>{ forecast.temperatureC }</td>
-              <td>{ forecast.temperatureF }</td>
-              <td>{ forecast.summary }</td>
+              <td>{ item[0] }</td>
+              <td>{ item[1] }</td>
             </tr>
           ))}
         </tbody>

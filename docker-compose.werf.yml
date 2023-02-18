@@ -1,0 +1,128 @@
+version: "3.8"
+
+services:
+  asp-react-oidc-keycloakdb:
+    container_name: asp-react-oidc-keycloakdb
+    image: postgres:12.9
+    labels:
+      kompose.controller.type: "statefulset"
+      kompose.service.expose: "keycloakdb.asp-react-oidc.test"
+      # kompose.service.expose.tls-secret: "asp-react-oidc-keycloakdb-secret"
+      # cert-manager.io/issuer: letsencrypt-production
+      kompose.service.expose.ingress-class-name: "nginx"
+    volumes:
+      - keycloakdb:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "/bin/sh", "-c", "exec pg_isready -h 127.0.0.1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - asp-react-oidc-network
+
+  asp-react-oidc-keycloak:
+    container_name: asp-react-oidc-keycloak
+    image: quay.io/keycloak/keycloak:19.0.3
+    labels:
+      kompose.service.expose: "keycloak.asp-react-oidc.test"
+      # kompose.service.expose.tls-secret: "asp-react-oidc-keycloak-secret"
+      # cert-manager.io/issuer: letsencrypt-production
+      kompose.service.expose.ingress-class-name: "nginx"
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://asp-react-oidc-keycloakdb:5432/postgres
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: postgres
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: PdZoV9NpYuq#zdsYXfHo
+      KC_FEATURES:
+        token-exchange
+      KC_HOSTNAME_STRICT: 'false'
+      KC_HOSTNAME_STRICT_HTTPS: 'false'
+      KC_HOSTNAME_STRICT_BACKCHANNEL: 'false'
+      KC_HTTP_ENABLED: 'true'
+      PROXY_ADDRESS_FORWARDING: 'true'
+      KC_CACHE_STACK: tcp
+    configs:
+      - source: keycloak-realm
+        target: /opt/keycloak/data/import/realm-export.json
+    ports:
+      - "80:80"
+    command:
+      - "start"
+      - "--http-port 80"
+      - "--proxy=passthrough"
+      - "--import-realm"
+    depends_on:
+      - keycloakdb
+    networks:
+      - asp-react-oidc-network
+
+  asp-react-oidc-backend:
+    container_name: asp-react-oidc-backend
+    image: "{{ .Values.werf.image.asp_react_oidc_backend }}"
+    labels:
+      kompose.service.expose: "backend.asp-react-oidc.test"
+      # kompose.service.expose.tls-secret: "asp-react-oidc-backend-secret"
+      # cert-manager.io/issuer: letsencrypt-production
+      kompose.service.expose.ingress-class-name: "nginx"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/healthcheck" ]
+      interval: 20s
+      retries: 5
+      start_period: 20s
+      timeout: 10s
+    ports:
+      - "80:80"
+    environment:
+      AUTHORITY: http://asp-react-oidc-keycloak/realms/react-example
+      AUDIENCE: backend
+      ASPNETCORE_ENVIRONMENT: Development
+    depends_on:
+      - asp-react-oidc-keycloak
+    networks:
+      - asp-react-oidc-network
+
+  
+  asp-react-oidc-web:
+    container_name: asp-react-oidc-web
+    image: "{{ .Values.werf.image.asp_react_oidc_web }}"
+    labels:
+      kompose.service.expose: "asp-react-oidc.test"
+      # kompose.service.expose.tls-secret: "asp-react-oidc-web-secret"
+      # cert-manager.io/issuer: letsencrypt-production
+      kompose.service.expose.ingress-class-name: "nginx"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3000" ]
+      interval: 20s
+      retries: 5
+      start_period: 20s
+      timeout: 10s
+    environment:
+      REACT_APP_KEYCLOAK_CLIENT_ID: react
+      REACT_APP_KEYCLOAK_URL: http://keycloak.asp-react-oidc.test/realms/react-example
+      REACT_APP_BACKEND_URL: http://backend.asp-react-oidc.test
+    ports:
+      - "80:3000"
+    depends_on:
+      - asp-react-oidc-keycloak
+    networks:
+      - asp-react-oidc-network
+
+
+
+networks:
+  asp-react-oidc-network:
+
+configs:
+  keycloak-realm:
+    file: ./.keycloak/realm-export.json
+
+volumes:
+  keycloakdb:
+    driver: local

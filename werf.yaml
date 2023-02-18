@@ -1,0 +1,15 @@
+configVersion: 1
+project: asp-react-oidc-demo
+---
+image: asp_react_oidc_backend
+dockerfile: Dockerfile
+context: ./src/backend
+---
+image: asp_react_oidc_web
+dockerfile: Dockerfile
+context: ./src/react
+args: {
+  REACT_APP_KEYCLOAK_CLIENT_ID: react,
+  REACT_APP_KEYCLOAK_URL: http://keycloak.asp-react-oidc.test/realms/react-example,
+  REACT_APP_BACKEND_URL: http://backend.asp-react-oidc.test
+}

@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 
-namespace backend;
 public class HasScopeRequirement : IAuthorizationRequirement
 {
     public string Issuer { get; }

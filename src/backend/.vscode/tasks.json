@@ -2,18 +2,37 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "docker-compose up backend",
-            "type": "docker-compose",
-            "dockerCompose": {
-              "up": {
-                "detached": true,
-                "build": true,
-                "services": ["backend"],
-              },
-              "files": [
-                "${workspaceFolder}/../../docker-compose.yml",
-              ],
-            }
+            "label": "build",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/backend.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "bridge-to-kubernetes.resource",
+            "type": "bridge-to-kubernetes.resource",
+            "resource": "asp-react-oidc-backend",
+            "resourceType": "service",
+            "ports": [
+                5235
+            ],
+            "targetCluster": "minikube",
+            "targetNamespace": "asp-react-oidc-demo",
+            "useKubernetesServiceEnvironmentVariables": false,
+            "isolateAs": "asp-react-oidc-demo-30dc"
+        },
+        {
+            "label": "bridge-to-kubernetes.compound",
+            "dependsOn": [
+                "bridge-to-kubernetes.resource",
+                "build"
+            ],
+            "dependsOrder": "sequence"
         }
     ]
 }

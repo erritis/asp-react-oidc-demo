@@ -1,17 +1,39 @@
 {
     "version": "0.2.0",
     "configurations": [
-        
         {
-            "name": "Docker .NET Core Attach",
-            "type": "docker",
-            "preLaunchTask": "docker-compose up backend",
-            "request": "attach",
-            "platform": "netCore",
-            "sourceFileMap": {
-                "/src": "${workspaceFolder}"
-            },
-            "containerName": "asp-react-auth-backend"
+            "name": ".NET Core Launch (console) with Kubernetes",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "bridge-to-kubernetes.compound",
+            "program": "${workspaceFolder}/bin/Debug/net7.0/backend.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "env": {
+                "AUTHORITY": "http://localhost:52433/realms/react-example",
+                "AUDIENCE": "backend",
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "ASPNETCORE_URLS": "http://+:5235"
+            }
+        },
+        {
+            "name": ".NET Core Launch (console)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/bin/Debug/net7.0/backend.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "env": {
+                "AUTHORITY": "http://localhost:52433/realms/react-example",
+                "AUDIENCE": "backend",
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "ASPNETCORE_URLS": "http://+:5235"
+            }
         }
     ]
 }

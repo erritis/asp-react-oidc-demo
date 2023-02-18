@@ -1,0 +1,14 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  creationTimestamp: null
+  name: asp-react-oidc-network
+spec:
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              io.kompose.network/asp-react-oidc-network: "true"
+  podSelector:
+    matchLabels:
+      io.kompose.network/asp-react-oidc-network: "true"

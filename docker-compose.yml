@@ -1,8 +1,8 @@
 version: "3.9"
 
 services:
-  keycloakdb:
-    container_name: asp-react-auth-keycloakdb
+  asp-react-oidc-keycloakdb:
+    container_name: asp-react-oidc-keycloakdb
     image: postgres:12.9
     volumes:
       - keycloakdb:/var/lib/postgresql/data
@@ -12,19 +12,19 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h keycloakdb"]
+      test: ["CMD-SHELL", "pg_isready -h asp-react-oidc-keycloakdb"]
       interval: 5s
       timeout: 5s
       retries: 5
     networks:
-      - asp-react-auth-network
+      - asp-react-oidc-network
 
-  keycloak:
-    container_name: asp-react-auth-keycloak
+  asp-react-oidc-keycloak:
+    container_name: asp-react-oidc-keycloak
     image: quay.io/keycloak/keycloak:19.0.3
     environment:
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://keycloakdb:5432/postgres
+      KC_DB_URL: jdbc:postgresql://asp-react-oidc-keycloakdb:5432/postgres
       KC_DB_USERNAME: postgres
       KC_DB_PASSWORD: postgres
       KEYCLOAK_ADMIN: admin
@@ -41,65 +41,69 @@ services:
       - ./.keycloak:/opt/keycloak/data/import/:ro
     command:
       - "start"
-      - "--http-port 52433"
+      - "--http-port 8080"
       - "--proxy=passthrough"
       - "--import-realm"
     ports:
-      - 52433:52433
+      - 52433:8080
     depends_on:
-      - keycloakdb
+      - asp-react-oidc-keycloakdb
     networks:
-      asp-react-auth-network:
-        ipv4_address: 172.18.0.3
-    
-  web:
-    image: node:14.17.6-alpine
-    container_name: asp-react-auth-web
-    stdin_open: true
-    deploy:
-      replicas: 1
-    ports:
-      - "52434:52434"
-    volumes:
-      - "$PWD/src/react:/app:rw"
-    depends_on:
-      - keycloak
-    environment:
-      REACT_APP_ENVIRONMENT_NAME: development
-      NODE_ENV: development
-      PORT: 52434
-      REACT_APP_KEYCLOAK_URL: http://172.18.0.3:52433/realms/react-example
-      REACT_APP_KEYCLOAK_CLIENT_ID: react
-      REACT_APP_BACKEND_URL: http://localhost:52435
-    working_dir: /app
-    command: sh -c "yarn install && yarn start"
-    networks:
-      - asp-react-auth-network
+      - asp-react-oidc-network
 
-  backend:
+  asp-react-oidc-backend:
+    container_name: asp-react-oidc-backend
+    image: asp-react-oidc-backend
     build: ./src/backend
-    container_name: asp-react-auth-backend
     deploy:
       replicas: 1
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://asp-react-oidc-backend:80/healthcheck" ]
+      interval: 20s
+      retries: 5
+      start_period: 20s
+      timeout: 10s
     environment:
+      AUTHORITY: http://asp-react-oidc-keycloak:8080/realms/react-example
+      AUDIENCE: backend
       ASPNETCORE_ENVIRONMENT: Development
-      DOTNET_ENVIRONMENT: Development
     depends_on:
-      - keycloak
+      - asp-react-oidc-keycloak
     volumes:
-      - ~/.vsdbg:/remote_debugger:rw
+      - ~/.vscode/extensions/ms-dotnettools.csharp-1.25.4-linux-x64/.debugger:/remote_debugger:rw
     ports:
-      - "52435:80"
+      - "52434:80"
     networks:
-      - asp-react-auth-network
+      - asp-react-oidc-network
+
+  asp-react-oidc-web:
+    container_name: asp-react-oidc-web
+    image: asp-react-oidc-web
+    build: 
+      context: ./src/react
+      args:
+        REACT_APP_KEYCLOAK_CLIENT_ID: react
+        REACT_APP_KEYCLOAK_URL: http://localhost:52433/realms/react-example
+        REACT_APP_BACKEND_URL: http://localhost:52434
+    deploy:
+      replicas: 1
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3000" ]
+      interval: 20s
+      retries: 5
+      start_period: 20s
+      timeout: 10s
+    ports:
+      - "52435:3000"
+    depends_on:
+      - asp-react-oidc-keycloak
+    networks:
+      - asp-react-oidc-network
 
 networks:
-  asp-react-auth-network:
-    name: asp-react-auth-network
+  asp-react-oidc-network:
+    name: asp-react-oidc-network
     driver: bridge
-    ipam:
-      config:
-        - subnet: "172.18.0.0/24"
 
 volumes:
   keycloakdb:
