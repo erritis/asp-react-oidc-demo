@@ -12,7 +12,7 @@ For demonstration use:
 
 - SSO: [keycloak](https://keycloak.org)
   
-- Web-client: react + typescript + [react-oidc-context](https://github.com/authts/react-oidc-context) (there is also a project version with [@axa-fr/react-oidc](https://github.com/erritis/asp-react-oidc-demo/tree/axa-fr_react-oidc))
+- Web-client: react + typescript + [@axa-fr/react-oidc](https://github.com/AxaGuilDEv/react-oidc) (there is also a project version with [react-oidc-context](https://github.com/erritis/asp-react-oidc-demo/tree/master))
   
 - Microservice: [aspnet-webapi](https://github.com/dotnet/aspnetcore)
 
